@@ -49,7 +49,10 @@ q1 <- dbGetQuery(conn,"SELECT TailNum, AVG(DepDelay) as avg_depdelay FROM ontime
 q1
 #Extracted data becomes Dataframe so pull the model with the smallest number
 q1[which.min(q1$avg_depdelay),"TailNum"]
-q1[q1$avg_depdelay == min(q1$avg_depdelay),]
+Ans1<- q1[q1$avg_depdelay == min(q1$avg_depdelay),]
+
+write.csv(Ans1, file="Ans1.csv",row.names = FALSE)
+read.csv("Ans1.csv")
 ```
 Q2 – Which city has the highest number of inbound flights (excluding
 cancelled flights)?
@@ -57,14 +60,20 @@ cancelled flights)?
 q2 <- dbGetQuery(conn,"SELECT Dest, COUNT(Dest) as cityinb FROM ontime WHERE Cancelled=0 GROUP BY Dest")
 q2
 q2[which.max(q2$cityinb),"Dest"]
-q2[q2$cityinb == max(q2$cityinb),]
+Ans2<- q2[q2$cityinb == max(q2$cityinb),]
+
+write.csv(Ans2, file="Ans2.csv",row.names = FALSE)
+read.csv("Ans2.csv")
 ```
 Q3 – Which carrier has the highest number of cancelled flights?
 ```{r}
 q3 <- dbGetQuery(conn, "SELECT UniqueCarrier, SUM(Cancelled) as totalcancelled FROM ontime WHERE Cancelled>0 GROUP BY UNIQUECarrier ")
 q3
 q3[which.max(q3$totalcancelled),"UniqueCarrier"]
-q3[q3$totalcancelled == max(q3$totalcancelled),]
+Ans3<- q3[q3$totalcancelled == max(q3$totalcancelled),]
+
+write.csv(Ans3, file="Ans3.csv",row.names = FALSE)
+read.csv("Ans3.csv")
 ```
 Q4 – Which carrier has the highest number of cancelled flights, relative to
 their number of total flights?
@@ -73,7 +82,10 @@ q4<- dbGetQuery(conn, "SELECT UniqueCarrier, SUM(Cancelled) as maxcancelled, COU
 q4
 q4[which.max(q4$maxcancelled),"UniqueCarrier"]
 q4$ratio <- q4$maxcancelled/q4$totalflight
-q4[q4$ratio == max(q4$ratio),]
+Ans4<- q4[q4$ratio == max(q4$ratio),]
+
+write.csv(Ans4, file="Ans4.csv",row.names = FALSE)
+read.csv("Ans4.csv")
 ```
 ```{r}
 dbDisconnect(conn)
