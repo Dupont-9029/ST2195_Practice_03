@@ -1,0 +1,80 @@
+---
+title: "r_sql"
+output: html_document
+date: "2024-11-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. It is a document querying a database on airlines on time data
+Run the first set of code to create table for ontime in SQLite 
+Precaution: must have 2000-2005 files and ontime table not already inside sql database
+
+```{r}
+# ======== load libraries ========
+
+#install.packages("RSQLite")
+library(DBI)
+library(dplyr)
+# Note: Insert your database name - e.g., "airline_r.db"
+conn <- dbConnect(RSQLite::SQLite(), "airline2.db")
+```
+
+
+```{r}
+#creating loop for data between 2000 to 2005 ontime files from bz2 files to load them or if you have compressed them to csv files remove bz2 from the code Beware that if you already have ontime table loaded this code chunk is not needed
+
+for(i in c(2000:2005)) {
+  airline <- paste0(i, ".csv.bz2")
+  print(paste("Processing:", airline))
+  ontime <- read.csv(airline, header = TRUE)
+  if(i == 2000) {
+    dbWriteTable(conn, "ontime", ontime)
+  } else {
+    dbWriteTable(conn, "ontime", ontime, append = TRUE)
+  }
+}
+```
+
+Q1 – Which plane model has the lowest associated average departure delay
+(excluding cancelled and diverted flights)?
+
+```{r}
+#Get the average of departure time first and run it to see if it works
+q1 <- dbGetQuery(conn,"SELECT TailNum, AVG(DepDelay) as avg_depdelay FROM ontime WHERE Cancelled=0 AND Diverted=0 GROUP BY TailNum")
+q1
+#Extracted data becomes Dataframe so pull the model with the smallest number
+q1[which.min(q1$avg_depdelay),"TailNum"]
+q1[q1$avg_depdelay == min(q1$avg_depdelay),]
+```
+Q2 – Which city has the highest number of inbound flights (excluding
+cancelled flights)?
+```{r}
+q2 <- dbGetQuery(conn,"SELECT Dest, COUNT(Dest) as cityinb FROM ontime WHERE Cancelled=0 GROUP BY Dest")
+q2
+q2[which.max(q2$cityinb),"Dest"]
+q2[q2$cityinb == max(q2$cityinb),]
+```
+Q3 – Which carrier has the highest number of cancelled flights?
+```{r}
+q3 <- dbGetQuery(conn, "SELECT UniqueCarrier, SUM(Cancelled) as totalcancelled FROM ontime WHERE Cancelled>0 GROUP BY UNIQUECarrier ")
+q3
+q3[which.max(q3$totalcancelled),"UniqueCarrier"]
+q3[q3$totalcancelled == max(q3$totalcancelled),]
+```
+Q4 – Which carrier has the highest number of cancelled flights, relative to
+their number of total flights?
+```{r}
+q4<- dbGetQuery(conn, "SELECT UniqueCarrier, SUM(Cancelled) as maxcancelled, COUNT(UniqueCarrier) as totalflight FROM ontime GROUP BY UniqueCarrier")
+q4
+q4[which.max(q4$maxcancelled),"UniqueCarrier"]
+q4$ratio <- q4$maxcancelled/q4$totalflight
+q4[q4$ratio == max(q4$ratio),]
+```
+```{r}
+dbDisconnect(conn)
+```
